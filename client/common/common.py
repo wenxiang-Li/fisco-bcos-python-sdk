@@ -54,7 +54,7 @@ def backup_file(file_name):
             os.mkdir(backuppath)
         backupfile = "{}/{}.{}".format(backuppath, shortname, filetime)
         print("backup [{}] to [{}]".format(file_name, backupfile))
-        shutil.move(file_name, backupfile)
+        shutil.copyfile(file_name, backupfile)
     return forcewrite
 
 
@@ -283,7 +283,7 @@ def print_tx_result(outputresults):
         if isinstance(result, bytes):
             print("{}, ".format(bytesToHex(result)))
             continue
-        print("tx reuslt: {}, ".format(result))
+        print("reuslt: {}, ".format(result))
 
 
 def check_result(result):

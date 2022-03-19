@@ -33,11 +33,11 @@ from client_config import client_config
 from eth_abi import decode_single
 from eth_utils.crypto import CRYPTO_TYPE_GM, CRYPTO_TYPE_ECDSA
 from eth_utils.hexadecimal import decode_hex, encode_hex
-from utils.abi import itertools, get_fn_abi_types_single
+from utils.abi import itertools, get_fn_abi_types_single, get_abi_output_types
 from utils.contracts import encode_transaction_data
 from utils.contracts import get_aligned_function_data
 from utils.contracts import get_function_info
-
+from eth_abi import decode_abi
 
 class BcosClient:
 
@@ -116,9 +116,13 @@ class BcosClient:
                 self.channel_handler = ChannelHandler()
                 self.channel_handler.setDaemon(True)
                 self.channel_handler.logger = self.logger
-                self.channel_handler.initTLSContext(client_config.channel_ca,
+                self.channel_handler.initTLSContext(
+                                                    client_config.ssl_type,
+                                                    client_config.channel_ca,
                                                     client_config.channel_node_cert,
-                                                    client_config.channel_node_key
+                                                    client_config.channel_node_key,
+                                                    client_config.channel_en_crt,
+                                                    client_config.channel_en_key
                                                     )
                 self.channel_handler.start_channel(
                     client_config.channel_host, client_config.channel_port)
@@ -143,6 +147,8 @@ class BcosClient:
         if client_config.client_protocol == client_config.PROTOCOL_CHANNEL:
             info = "channel {}:{}".format(self.channel_handler.host, self.channel_handler.port)
         info += ",groupid :{}".format(self.groupid)
+        info += ",crypto type:{}".format(client_config.crypto_type)
+        info += ",ssl type:{}".format(client_config.ssl_type)
         return info
 
     def is_error_response(self, response):
@@ -419,6 +425,7 @@ class BcosClient:
         params = [client_config.groupid, callmap]
         # 发送
         response = self.common_request(cmd, params)
+        #print("response : ",response)
         # check status
         if "status" in response.keys():
             status = int(response["status"], 16)
@@ -433,11 +440,14 @@ class BcosClient:
             )
             # print("fn_selector",fn_selector)
             # print("fn_arguments",fn_arguments)
-            fn_output_types = get_fn_abi_types_single(fn_abi, "outputs")
+            #fn_output_types = get_fn_abi_types_single(fn_abi, "outputs")
+            fn_output_types = get_abi_output_types(fn_abi);
             try:
-                decoderesult = decode_single(fn_output_types, decode_hex(outputdata))
+                #decoderesult = decode_single(fn_output_types, decode_hex(outputdata))
+                #print("fn_output_types",fn_output_types)
+                decoderesult = decode_abi(fn_output_types,decode_hex(outputdata))
                 return decoderesult
-            except BaseException:
+            except BaseException as e:
                 return response
         return response
 
